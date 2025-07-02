@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
-project(Wisp)
+project(wisp)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(libs/glfw)
@@ -29,8 +29,8 @@ set(IMGUI_FILES
     libs/imgui/backends/imgui_impl_opengl3.cpp
 )
 
-add_executable(Wisp ${SRC_FILES} ${GLAD_FILES} ${IMGUI_FILES})
+add_executable(wisp ${SRC_FILES} ${GLAD_FILES} ${IMGUI_FILES})
 
-target_link_libraries(Wisp PRIVATE glfw)
+target_link_libraries(wisp PRIVATE glfw)
 
 file(COPY shaders DESTINATION ${CMAKE_BINARY_DIR})
