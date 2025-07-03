@@ -1,56 +1,65 @@
 #pragma once
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <expected>
-#include <string>
-#include <memory>
-#include <future>
 #include "Shader.h"
-#include "Framebuffer.h"
-#include "VertexArray.h"
+#include "Camera.h"
+#include "../fractal/Fractal.h"
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <memory>
 
 class Renderer
 {
 public:
-    struct Config
-    {
-        int width = 1600;
-        int height = 900;
-        int msaaSamples = 4;
-        bool vsync = true;
-    };
-
-    Renderer(GLFWwindow* window, const Config& config);
+    Renderer(GLFWwindow* window, int width, int height);
     ~Renderer();
 
-    std::expected<void, std::string> initialize();
     void resize(int width, int height);
+    void render(const Camera& camera);
 
-    void beginFrame();
-    void endFrame();
-
-    void bindFractalFramebuffer();
-    void applyBloom();
-    void applyPostProcessing(float exposure, float gamma);
-    void renderFullscreenQuad();
-
-    Shader& getFractalShader() { return *m_fractalShader; }
-    Shader& getPostProcessingShader() { return *m_postProcessShader; }
-    Shader& getBloomShader() { return *m_bloomShader; }
-
-    std::expected<void, std::string> reloadShaders();
-    std::future<std::expected<void, std::string>> reloadShadersAsync();
+    template<typename Fractal>
+    void setFractal(Fractal fractal)
+    {
+        m_currentFractal = std::make_unique<FractalWrapper<Fractal>>(std::move(fractal));
+    }
+    
+    bool isMandelbulbActive() const;
+    bool isJuliaActive() const;
+    
+    std::string_view getCurrentFractalName() const;
+    const FractalParams& getCurrentFractalParams() const;
+    void setCurrentFractalParams(const FractalParams& params);
 
 private:
+    struct FractalBase
+    {
+        virtual ~FractalBase() = default;
+        virtual void updateUniforms(Shader& program) = 0;
+        virtual std::string_view getName() const = 0;
+        virtual const FractalParams& getParams() const = 0;
+        virtual void setParams(FractalParams params) = 0;
+    };
+
+    template<typename Fractal>
+    struct FractalWrapper : FractalBase
+    {
+        Fractal fractal;
+        FractalWrapper(Fractal f) : fractal(std::move(f)) {}
+        void updateUniforms(Shader& program) override { fractal.updateUniforms(program); }
+        std::string_view getName() const override { return fractal.getName(); }
+        const FractalParams& getParams() const override { return fractal.getParams(); }
+        void setParams(FractalParams params) override { fractal.setParams(std::move(params)); }
+    };
+
     GLFWwindow* m_window;
-    Config m_config;
+    int m_width, m_height;
+    
+    GLuint m_screenVAO, m_screenVBO;
+    GLuint m_outputTexture;
+    Shader m_computeShader;
+    Shader m_screenShader;
+    
+    std::unique_ptr<FractalBase> m_currentFractal;
 
-    std::unique_ptr<Shader> m_fractalShader;
-    std::unique_ptr<Shader> m_postProcessShader;
-    std::unique_ptr<Shader> m_bloomShader;
-    std::unique_ptr<Framebuffer> m_mainFBO;
-    std::unique_ptr<Framebuffer> m_bloomFBO;
-    std::unique_ptr<VertexArray> m_fullscreenQuad;
-
-    std::expected<std::unique_ptr<Shader>, std::string> createShader(const std::string& vertPath, const std::string& fragPath);
+    void createScreenQuad();
+    void createOutputTexture();
+    void updateFrameStats();
 };

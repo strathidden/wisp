@@ -11,6 +11,7 @@ include_directories(
     libs/glm
     libs/glad/include
     libs/imgui
+    libs/json/single_include
 )
 
 file(GLOB_RECURSE SRC_FILES "src/*.cpp")
