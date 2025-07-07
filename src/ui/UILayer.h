@@ -1,14 +1,11 @@
 #pragma once
 
-#include "../graphics/Shader.h"
-#include "../fractals/IFractal.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
-#include <memory>
-#include <string>
 
 class Application;
+class IFractal;
 
 class UILayer
 {
@@ -19,11 +16,11 @@ public:
     void beginFrame();
     void endFrame();
 
-    void draw(Application& app, IFractal& fractal);
+    void draw(Application& app);
 
 private:
-    void drawMainMenu(Application& app, IFractal& fractal);
-    void drawFractalControls(IFractal& fractal);
+    void drawMainMenu(Application& app);
+    void drawFractalControls(IFractal* fractal);
     void drawFractalSelector(Application& app);
 
     char m_savePath[256] = "config.json";

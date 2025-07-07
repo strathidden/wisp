@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 #include <glm/glm.hpp>
 #include "Shader.h"
 
@@ -11,7 +10,7 @@ public:
     ~Renderer();
 
     void initialize();
-    void render(const Shader& shader, const std::vector<glm::vec2>& vertices);
+    void render(const Shader& shader);
 
 private:
     unsigned int m_vao = 0;

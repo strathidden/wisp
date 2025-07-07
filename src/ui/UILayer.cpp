@@ -4,7 +4,6 @@
 #include "../utils/JsonHelper.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
-#include <iostream>
 
 void UILayer::initialize(GLFWwindow* window)
 {
@@ -45,14 +44,14 @@ void UILayer::endFrame()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void UILayer::draw(Application& app, IFractal& fractal)
+void UILayer::draw(Application& app)
 {
     ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
-    drawMainMenu(app, fractal);
-    drawFractalControls(fractal);
+    drawMainMenu(app);
+    drawFractalControls(app.m_currentFractal.get());
 }
 
-void UILayer::drawMainMenu(Application& app, IFractal& fractal)
+void UILayer::drawMainMenu(Application& app)
 {
     if (ImGui::BeginMainMenuBar())
     {
@@ -60,11 +59,11 @@ void UILayer::drawMainMenu(Application& app, IFractal& fractal)
         {
             if (ImGui::MenuItem("Save Configuration"))
             {
-                JsonHelper::saveConfig(m_savePath, fractal, app.m_camera);
+                JsonHelper::saveConfig(m_savePath, *app.m_currentFractal, app.m_camera);
             }
             if (ImGui::MenuItem("Load Configuration"))
             {
-                JsonHelper::loadConfig(m_loadPath, fractal, app.m_camera);
+                JsonHelper::loadConfig(m_loadPath, *app.m_currentFractal, app.m_camera);
             }
             if (ImGui::MenuItem("Exit"))
             {
@@ -81,10 +80,12 @@ void UILayer::drawMainMenu(Application& app, IFractal& fractal)
     }
 }
 
-void UILayer::drawFractalControls(IFractal& fractal)
+void UILayer::drawFractalControls(IFractal* fractal)
 {
+    if (!fractal) return;
+
     ImGui::Begin("Fractal Parameters");
-    fractal.drawGui();
+    fractal->drawGui();
     ImGui::End();
 }
 

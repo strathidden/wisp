@@ -119,14 +119,9 @@ void Application::run()
             m_currentFractal->setUniforms(m_shader);
         }
         
-        std::vector<glm::vec2> quad =
-        {
-            {-1.0f, -1.0f}, {1.0f, -1.0f}, {-1.0f, 1.0f},
-            {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}
-        };
-        m_renderer.render(m_shader, quad);
+        m_renderer.render(m_shader);
         
-        m_ui.draw(*this, *m_currentFractal);
+        m_ui.draw(*this);
         m_ui.endFrame();
         
         glfwSwapBuffers(m_window);
