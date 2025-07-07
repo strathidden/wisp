@@ -24,8 +24,5 @@ public:
 
 private:
     unsigned int m_id = 0;
-    mutable std::unordered_map<std::string, int> m_uniformLocationCache;
-    
-    int getUniformLocation(const std::string& name) const;
     void checkCompileErrors(unsigned int shader, const std::string& type);
 };

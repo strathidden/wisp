@@ -79,53 +79,37 @@ void Shader::checkCompileErrors(unsigned int shader, const std::string& type)
     }
 }
 
-int Shader::getUniformLocation(const std::string& name) const
-{
-    if (m_uniformLocationCache.find(name) != m_uniformLocationCache.end())
-    {
-        return m_uniformLocationCache[name];
-    }
-    
-    int location = glGetUniformLocation(m_id, name.c_str());
-    if (location == -1)
-    {
-        std::cerr << "Warning: Uniform '" << name << "' not found!" << std::endl;
-    }
-    m_uniformLocationCache[name] = location;
-    return location;
-}
-
 void Shader::setBool(const std::string& name, bool value) const
 {
-    glUniform1i(getUniformLocation(name), static_cast<int>(value));
+    glUniform1i(glGetUniformLocation(m_id, name.c_str()), static_cast<int>(value));
 }
 
 void Shader::setInt(const std::string& name, int value) const
 {
-    glUniform1i(getUniformLocation(name), value);
+    glUniform1i(glGetUniformLocation(m_id, name.c_str()), value);
 }
 
 void Shader::setFloat(const std::string& name, float value) const
 {
-    glUniform1f(getUniformLocation(name), value);
+    glUniform1f(glGetUniformLocation(m_id, name.c_str()), value);
 }
 
 void Shader::setVec2(const std::string& name, const glm::vec2& value) const
 {
-    glUniform2fv(getUniformLocation(name), 1, &value[0]);
+    glUniform2fv(glGetUniformLocation(m_id, name.c_str()), 1, &value[0]);
 }
 
 void Shader::setVec3(const std::string& name, const glm::vec3& value) const
 {
-    glUniform3fv(getUniformLocation(name), 1, &value[0]);
+    glUniform3fv(glGetUniformLocation(m_id, name.c_str()), 1, &value[0]);
 }
 
 void Shader::setVec4(const std::string& name, const glm::vec4& value) const
 {
-    glUniform4fv(getUniformLocation(name), 1, &value[0]);
+    glUniform4fv(glGetUniformLocation(m_id, name.c_str()), 1, &value[0]);
 }
 
 void Shader::setMat4(const std::string& name, const glm::mat4& value) const
 {
-    glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &value[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(m_id, name.c_str()), 1, GL_FALSE, &value[0][0]);
 }
