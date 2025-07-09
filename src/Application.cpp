@@ -48,6 +48,8 @@ Application::Application()
     });
 
     glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
+        ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
+
         static double lastX = xpos;
         static double lastY = ypos;
 
@@ -87,10 +89,9 @@ Application::Application()
     });
 
     glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
-        auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-
         ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 
+        auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
         if (!app->m_uiManager->wantCaptureMouse()) {
             app->m_camera.processMouseScroll(static_cast<float>(yoffset));
         }
@@ -98,11 +99,6 @@ Application::Application()
 
     glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods) {
         ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-
-        auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-        if (!app->m_uiManager->wantCaptureMouse()) {
-            // Camera will handle it in cursor position callback
-        }
     });
 }
 

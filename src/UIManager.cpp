@@ -11,6 +11,7 @@ UIManager::UIManager(GLFWwindow* window, FractalParams& params)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     
     ImGui::StyleColorsLight();
     ImVec4* colors = ImGui::GetStyle().Colors;

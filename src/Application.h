@@ -24,6 +24,6 @@ private:
     std::unique_ptr<UIManager> m_uiManager;
     bool m_running = true;
     double m_lastFrameTime = 0.0;
-    int m_width = 1280;
-    int m_height = 720;
+    int m_width = 1920;
+    int m_height = 1080;
 };

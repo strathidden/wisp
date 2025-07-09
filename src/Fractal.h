@@ -34,7 +34,8 @@ void from_json(const json& j, FractalParams& p);
 namespace nlohmann {
     template <>
     struct adl_serializer<FractalParams> {
-        static void to_json(json& j, const FractalParams& p) {
+        static void to_json(json& j, const FractalParams& p)
+        {
             j = json{
                 {"maxIterations", p.maxIterations},
                 {"power", p.power},
@@ -54,7 +55,8 @@ namespace nlohmann {
             };
         }
 
-        static void from_json(const json& j, FractalParams& p) {
+        static void from_json(const json& j, FractalParams& p)
+        {
             j.at("maxIterations").get_to(p.maxIterations);
             j.at("power").get_to(p.power);
             j.at("bailout").get_to(p.bailout);
