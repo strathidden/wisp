@@ -3,7 +3,7 @@
 #include <iostream>
 
 Application::Application()
-    : m_camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, 0))
+    : m_camera(glm::vec3(0, 0, 0), 1.5f)
 {
     if (!glfwInit())
     {
@@ -48,24 +48,60 @@ Application::Application()
     });
 
     glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
+        static double lastX = xpos;
+        static double lastY = ypos;
+
         auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-        if (!app->m_uiManager->wantCaptureMouse()) {
-            app->m_camera.processMouseMovement(static_cast<float>(xpos), static_cast<float>(ypos));
+
+        if (!app->m_uiManager->wantCaptureMouse())
+        {
+            float xoffset = static_cast<float>(xpos - lastX);
+            float yoffset = static_cast<float>(lastY - ypos);
+
+            int button = -1;
+            if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+            {
+                button = GLFW_MOUSE_BUTTON_LEFT;
+            }
+            else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
+            {
+                button = GLFW_MOUSE_BUTTON_MIDDLE;
+            }
+
+            if (button != -1)
+            {
+                app->m_camera.processMouseMovement(xoffset, yoffset, button);
+            }
         }
+
+        lastX = xpos;
+        lastY = ypos;
     });
 
-    glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods) {
-        auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-        if (app->m_uiManager)
-        {
-            ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-        }
+    glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+    });
+
+    glfwSetCharCallback(m_window, [](GLFWwindow* window, unsigned int c) {
+        ImGui_ImplGlfw_CharCallback(window, c);
     });
 
     glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
         auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+
+        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+
         if (!app->m_uiManager->wantCaptureMouse()) {
             app->m_camera.processMouseScroll(static_cast<float>(yoffset));
+        }
+    });
+
+    glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods) {
+        ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+
+        auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        if (!app->m_uiManager->wantCaptureMouse()) {
+            // Camera will handle it in cursor position callback
         }
     });
 }
@@ -87,6 +123,7 @@ void Application::run()
         processInput();
         update();
         render();
+
         m_uiManager->render(deltaTime);
 
         glfwSwapBuffers(m_window);
@@ -100,14 +137,6 @@ void Application::processInput()
     {
         m_running = false;
     }
-
-    if (!m_uiManager->wantCaptureKeyboard())
-    {
-        if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS) m_camera.processKeyboard(FORWARD);
-        if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) m_camera.processKeyboard(BACKWARD);
-        if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS) m_camera.processKeyboard(LEFT);
-        if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) m_camera.processKeyboard(RIGHT);
-    }
 }
 
 void Application::update()
@@ -119,6 +148,7 @@ void Application::render()
 {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     glEnable(GL_DEPTH_TEST);
     m_renderer->render(m_camera, m_width, m_height);
     glDisable(GL_DEPTH_TEST);

@@ -3,9 +3,8 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform mat4 u_view;
-uniform mat4 u_projection;
-uniform vec3 u_cameraPos;
+uniform vec3 u_cameraPosition;
+uniform vec3 u_cameraTarget;
 uniform vec2 u_resolution;
 
 uniform int u_maxIterations;
@@ -63,7 +62,7 @@ vec3 shade(vec3 pos, vec3 normal, vec3 lightDir) {
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * u_diffuse * u_color2;
     
-    vec3 viewDir = normalize(u_cameraPos - pos);
+    vec3 viewDir = normalize(u_cameraPosition - pos);
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_shininess);
     vec3 specular = u_specular * spec * vec3(1.0);
@@ -74,13 +73,14 @@ vec3 shade(vec3 pos, vec3 normal, vec3 lightDir) {
 void main() {
     vec2 uv = (TexCoords - 0.5) * 2.0;
     uv.x *= u_resolution.x / u_resolution.y;
+
+    vec3 w = normalize(u_cameraTarget - u_cameraPosition);
+    vec3 u = normalize(cross(w, vec3(0.0, 1.0, 0.0)));
+    vec3 v = normalize(cross(u, w));
     
-    vec4 rayClip = vec4(uv, -1.0, 1.0);
-    vec4 rayEye = inverse(u_projection) * rayClip;
-    rayEye = vec4(rayEye.xy, -1.0, 0.0);
-    vec3 rayDir = normalize((inverse(u_view) * rayEye).xyz);
-    
-    vec3 rayPos = u_cameraPos;
+    vec3 rayDir = normalize(uv.x * u + uv.y * v + 0.5 * w);
+    vec3 rayPos = u_cameraPosition;
+
     float totalDistance = 0.0;
     float dist = 0.0;
     

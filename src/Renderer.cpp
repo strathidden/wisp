@@ -26,9 +26,8 @@ void Renderer::render(const Camera& camera, int width, int height) const
 {
     m_shader.use();
 
-    m_shader.setMat4("u_view", camera.getViewMatrix());
-    m_shader.setMat4("u_projection", camera.getProjectionMatrix(static_cast<float>(width), static_cast<float>(height)));
-    m_shader.setVec3("u_cameraPos", camera.getPosition());
+    m_shader.setVec3("u_cameraPosition", camera.getPosition());
+    m_shader.setVec3("u_cameraTarget", camera.getTarget());
     
     m_shader.setInt("u_maxIterations", m_fractalParams.maxIterations);
     m_shader.setFloat("u_power", m_fractalParams.power);
