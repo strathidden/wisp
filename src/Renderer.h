@@ -9,7 +9,6 @@ public:
     Renderer();
     ~Renderer();
 
-    void resize(int width, int height);
     void render(const Camera& camera, int width, int height) const;
     void updateFractalParams(const FractalParams& params);
     FractalParams& getFractalParams() { return m_fractalParams; }
@@ -18,7 +17,7 @@ private:
     void createQuad();
 
     Shader m_shader;
-    unsigned int m_vao = 0, m_vbo = 0;
-    unsigned int m_width = 0, m_height = 0;
+    unsigned int m_vao = 0;
+    unsigned int m_vbo = 0;
     FractalParams m_fractalParams;
 };

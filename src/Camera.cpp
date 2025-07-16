@@ -5,13 +5,9 @@
 
 Camera::Camera(glm::vec3 target, float distance, float azimuth, float elevation)
     : m_target(target),
-    m_up(glm::vec3(0.0f, 1.0f, 0.0f)),
     m_distance(distance),
     m_azimuth(azimuth),
-    m_elevation(elevation),
-    m_panSpeed(0.01f),
-    m_rotateSpeed(0.5f),
-    m_zoomSpeed(0.5f)
+    m_elevation(elevation)
 {
     updatePosition();
 }
@@ -22,8 +18,7 @@ void Camera::processMouseMovement(float xoffset, float yoffset, int button)
     {
         m_azimuth -= xoffset * m_rotateSpeed;
         m_elevation += yoffset * m_rotateSpeed;
-        
-        m_elevation = std::clamp(m_elevation, -89.0f, 89.0f);
+        m_elevation = std::clamp(m_elevation, m_minElevation, m_maxElevation);
     }
     else if (button == GLFW_MOUSE_BUTTON_MIDDLE)
     {
@@ -34,14 +29,13 @@ void Camera::processMouseMovement(float xoffset, float yoffset, int button)
         m_target -= right * xoffset * m_panSpeed * m_distance;
         m_target += up * yoffset * m_panSpeed * m_distance;
     }
-
     updatePosition();
 }
 
 void Camera::processMouseScroll(float yoffset)
 {
     m_distance *= (1.0f - yoffset * m_zoomSpeed);
-    m_distance = std::max(m_distance, 0.1f);
+    m_distance = std::max(m_distance, m_minDistance);
     updatePosition();
 }
 

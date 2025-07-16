@@ -12,7 +12,6 @@ struct FractalParams
     float bailout = 2.0f;
     float scale = 1.5f;
     glm::vec3 offset = glm::vec3(0.0f);
-    glm::vec3 julia = glm::vec3(0.0f, 0.5f, 0.4f);
 
     float stepSize = 0.01f;
     float minDistance = 0.001f;
@@ -23,6 +22,8 @@ struct FractalParams
     float diffuse = 0.7f;
     float specular = 0.5f;
     float shininess = 32.0f;
+    int maxSteps = 256;
+    int samples = 4;
 
     void loadFromJson(const json& j);
     json saveToJson() const;
@@ -42,7 +43,6 @@ namespace nlohmann {
                 {"bailout", p.bailout},
                 {"scale", p.scale},
                 {"offset", {p.offset.x, p.offset.y, p.offset.z}},
-                {"julia", {p.julia.x, p.julia.y, p.julia.z}},
                 {"stepSize", p.stepSize},
                 {"minDistance", p.minDistance},
                 {"maxDistance", p.maxDistance},
@@ -51,7 +51,9 @@ namespace nlohmann {
                 {"ambient", p.ambient},
                 {"diffuse", p.diffuse},
                 {"specular", p.specular},
-                {"shininess", p.shininess}
+                {"shininess", p.shininess},
+                {"maxSteps", p.maxSteps},
+                {"samples", p.samples}
             };
         }
 
@@ -64,9 +66,6 @@ namespace nlohmann {
             
             auto offset = j.at("offset").get<std::vector<float>>();
             p.offset = glm::vec3(offset[0], offset[1], offset[2]);
-            
-            auto julia = j.at("julia").get<std::vector<float>>();
-            p.julia = glm::vec3(julia[0], julia[1], julia[2]);
             
             j.at("stepSize").get_to(p.stepSize);
             j.at("minDistance").get_to(p.minDistance);
@@ -82,6 +81,8 @@ namespace nlohmann {
             j.at("diffuse").get_to(p.diffuse);
             j.at("specular").get_to(p.specular);
             j.at("shininess").get_to(p.shininess);
+            j.at("maxSteps").get_to(p.maxSteps);
+            j.at("samples").get_to(p.samples);
         }
     };
 }

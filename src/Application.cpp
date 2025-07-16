@@ -37,28 +37,37 @@ Application::Application()
 
     m_renderer = std::make_unique<Renderer>();
     m_uiManager = std::make_unique<UIManager>(m_window, m_renderer->getFractalParams());
-    
+
+    setupCallbacks();
+
+    glfwGetCursorPos(m_window, &m_lastMouseX, &m_lastMouseY);
+}
+
+Application::~Application()
+{
+    glfwTerminate();
+}
+
+void Application::setupCallbacks()
+{
     glfwSetWindowUserPointer(m_window, this);
+
     glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
         auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
         app->m_width = width;
         app->m_height = height;
-        app->m_renderer->resize(width, height);
     });
 
     glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
         ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
 
-        static double lastX = xpos;
-        static double lastY = ypos;
-
         auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
 
         if (!app->m_uiManager->wantCaptureMouse())
         {
-            float xoffset = static_cast<float>(xpos - lastX);
-            float yoffset = static_cast<float>(lastY - ypos);
+            float xoffset = static_cast<float>(xpos - app->m_lastMouseX);
+            float yoffset = static_cast<float>(app->m_lastMouseY - ypos);
 
             int button = -1;
             if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
@@ -76,8 +85,8 @@ Application::Application()
             }
         }
 
-        lastX = xpos;
-        lastY = ypos;
+        app->m_lastMouseX = xpos;
+        app->m_lastMouseY = ypos;
     });
 
     glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -102,11 +111,6 @@ Application::Application()
     });
 }
 
-
-Application::~Application()
-{
-    glfwTerminate();
-}
 
 void Application::run()
 {
@@ -144,8 +148,5 @@ void Application::render()
 {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_DEPTH_TEST);
     m_renderer->render(m_camera, m_width, m_height);
-    glDisable(GL_DEPTH_TEST);
 }

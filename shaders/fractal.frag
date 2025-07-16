@@ -4,7 +4,8 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform vec3 u_cameraPosition;
-uniform vec3 u_cameraTarget;
+uniform mat4 u_viewMatrix;
+uniform mat4 u_projectionMatrix;
 uniform vec2 u_resolution;
 
 uniform int u_maxIterations;
@@ -12,7 +13,6 @@ uniform float u_power;
 uniform float u_bailout;
 uniform float u_scale;
 uniform vec3 u_offset;
-uniform vec3 u_julia;
 
 uniform float u_stepSize;
 uniform float u_minDistance;
@@ -23,6 +23,13 @@ uniform float u_ambient;
 uniform float u_diffuse;
 uniform float u_specular;
 uniform float u_shininess;
+uniform int u_maxSteps;
+uniform int u_samples;
+
+float DE(vec3 pos);
+vec3 calculateNormal(vec3 pos);
+vec3 shade(vec3 pos, vec3 normal, vec3 lightDir, float ao);
+vec3 getRayDirection(vec2 uv);
 
 float DE(vec3 pos) {
     vec3 z = pos;
@@ -48,19 +55,23 @@ float DE(vec3 pos) {
 
 vec3 calculateNormal(vec3 pos) {
     const float eps = 0.001;
-    vec3 n = vec3(
-        DE(pos + vec3(eps, 0, 0)) - DE(pos - vec3(eps, 0, 0)),
-        DE(pos + vec3(0, eps, 0)) - DE(pos - vec3(0, eps, 0)),
-        DE(pos + vec3(0, 0, eps)) - DE(pos - vec3(0, 0, eps))
-    );
-    return normalize(n);
+    vec2 e = vec2(eps, 0);
+    
+    return normalize(vec3(
+        DE(pos + e.xyy) - DE(pos - e.xyy),
+        DE(pos + e.yxy) - DE(pos - e.yxy),
+        DE(pos + e.yyx) - DE(pos - e.yyx)
+    ));
 }
 
-vec3 shade(vec3 pos, vec3 normal, vec3 lightDir) {
-    vec3 ambient = u_ambient * u_color1;
+vec3 shade(vec3 pos, vec3 normal, vec3 lightDir, float ao) {
+    float colorFactor = smoothstep(0.0, 1.0, length(pos) / 5.0);
+    vec3 baseColor = mix(u_color1, u_color2, colorFactor);
+    
+    vec3 ambient = u_ambient * baseColor * ao;
     
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * u_diffuse * u_color2;
+    vec3 diffuse = diff * u_diffuse * baseColor;
     
     vec3 viewDir = normalize(u_cameraPosition - pos);
     vec3 reflectDir = reflect(-lightDir, normal);
@@ -70,34 +81,65 @@ vec3 shade(vec3 pos, vec3 normal, vec3 lightDir) {
     return ambient + diffuse + specular;
 }
 
+vec3 getRayDirection(vec2 uv) {
+    vec4 rayClip = vec4(uv * 2.0 - 1.0, -1.0, 1.0);
+
+    vec4 rayEye = inverse(u_projectionMatrix) * rayClip;
+    rayEye = vec4(rayEye.xy, -1.0, 0.0);
+
+    vec3 rayWorld = normalize((inverse(u_viewMatrix) * rayEye).xyz);
+
+    return rayWorld;
+}
+
 void main() {
-    vec2 uv = (TexCoords - 0.5) * 2.0;
-    uv.x *= u_resolution.x / u_resolution.y;
-
-    vec3 w = normalize(u_cameraTarget - u_cameraPosition);
-    vec3 u = normalize(cross(w, vec3(0.0, 1.0, 0.0)));
-    vec3 v = normalize(cross(u, w));
+    vec3 finalColor = vec3(0.0);
     
-    vec3 rayDir = normalize(uv.x * u + uv.y * v + 0.5 * w);
-    vec3 rayPos = u_cameraPosition;
-
-    float totalDistance = 0.0;
-    float dist = 0.0;
-    
-    for (int i = 0; i < 256; i++) {
-        dist = DE(rayPos);
-        totalDistance += dist;
-        rayPos += rayDir * dist;
+    for (int s = 0; s < u_samples; s++) {
+        vec2 jitter = vec2(
+            float(s % 2) * 0.5,
+            float(s / 2) * 0.5
+        ) / float(u_samples);
         
-        if (dist < u_minDistance || totalDistance > u_maxDistance) break;
+        vec2 uv = TexCoords + jitter;
+        
+        vec3 rayDir = getRayDirection(uv);
+        vec3 rayPos = u_cameraPosition;
+        
+        float totalDistance = 0.0;
+        float dist = 0.0;
+        int steps = 0;
+        float aoFactor = 1.0;
+    
+        for (int i = 0; i < u_maxSteps; i++) {
+            dist = DE(rayPos);
+            totalDistance += dist;
+            rayPos += rayDir * dist;
+            
+            aoFactor -= 1.0 / float(u_maxSteps);
+            
+            if (dist < u_minDistance || totalDistance > u_maxDistance) {
+                break;
+            }
+        }
+        
+        vec3 color;
+        
+        if (dist < u_minDistance) {
+            vec3 normal = calculateNormal(rayPos);
+            vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5)); // Fixed light direction
+            color = shade(rayPos, normal, lightDir, clamp(aoFactor, 0.1, 1.0));
+        } 
+        else {
+            float t = 0.5 * (rayDir.y + 1.0);
+            color = mix(vec3(0.3, 0.4, 0.6), vec3(0.7, 0.8, 1.0), t);
+        }
+        
+        finalColor += color;
     }
     
-    if (dist < u_minDistance) {
-        vec3 normal = calculateNormal(rayPos);
-        vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
-        vec3 color = shade(rayPos, normal, lightDir);
-        FragColor = vec4(color, 1.0);
-    } else {
-        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-    }
+    finalColor /= float(u_samples);
+    finalColor = pow(finalColor, vec3(1.0 / 2.2));
+    
+    FragColor = vec4(finalColor, 1.0);
 }

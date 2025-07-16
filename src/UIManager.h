@@ -16,14 +16,25 @@ public:
     bool wantCaptureKeyboard() const;
     FractalParams& getFractalParams() { return m_fractalParams; }
 
+    using FileActionCallback = std::function<void(const std::string&)>;
+    void setFileActionCallback(FileActionCallback callback)
+    {
+        m_fileActionCallback = callback;
+    }
+
 private:
     void drawMainWindow();
     void drawFileDialog();
+    void drawPerformanceWindow(float deltaTime);
+    void drawPresetsPanel();
 
     FractalParams& m_fractalParams;
     ConfigManager m_configManager;
-    std::string m_currentFile = "config.json";
-    std::vector<std::string> m_recentFiles;
     bool m_showFileDialog = false;
     bool m_isSaving = false;
+    std::string m_currentFile = "config.json";
+
+    bool m_showPerformance = true;
+    bool m_showPresets = false;
+    FileActionCallback m_fileActionCallback;
 };
