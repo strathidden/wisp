@@ -32,7 +32,7 @@ vec3 shade(vec3 pos, vec3 normal, vec3 lightDir, float ao);
 vec3 getRayDirection(vec2 uv);
 
 float DE(vec3 pos) {
-    vec3 z = pos;
+    vec3 z = pos * u_scale + u_offset;
     float dr = 1.0;
     float r = 0.0;
     
@@ -45,7 +45,7 @@ float DE(vec3 pos) {
         float zr = pow(r, u_power);
         
         z = zr * vec3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
-        z += pos;
+        z += pos * u_scale + u_offset;
         
         dr = pow(r, u_power - 1.0) * u_power * dr + 1.0;
     }
@@ -57,10 +57,11 @@ vec3 calculateNormal(vec3 pos) {
     const float eps = 0.001;
     vec2 e = vec2(eps, 0);
     
+    float d = DE(pos);
     return normalize(vec3(
-        DE(pos + e.xyy) - DE(pos - e.xyy),
-        DE(pos + e.yxy) - DE(pos - e.yxy),
-        DE(pos + e.yyx) - DE(pos - e.yyx)
+        DE(pos + e.xyy) - d,
+        DE(pos + e.yxy) - d,
+        DE(pos + e.yyx) - d
     ));
 }
 
@@ -115,6 +116,7 @@ void main() {
             dist = DE(rayPos);
             totalDistance += dist;
             rayPos += rayDir * dist;
+            steps++;
             
             aoFactor -= 1.0 / float(u_maxSteps);
             
@@ -127,7 +129,7 @@ void main() {
         
         if (dist < u_minDistance) {
             vec3 normal = calculateNormal(rayPos);
-            vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5)); // Fixed light direction
+            vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
             color = shade(rayPos, normal, lightDir, clamp(aoFactor, 0.1, 1.0));
         } 
         else {

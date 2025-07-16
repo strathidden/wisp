@@ -7,7 +7,7 @@ using json = nlohmann::json;
 
 struct FractalParams
 {
-    int maxIterations = 100;
+    int maxIterations = 50;
     float power = 8.0f;
     float bailout = 2.0f;
     float scale = 1.5f;
@@ -22,8 +22,8 @@ struct FractalParams
     float diffuse = 0.7f;
     float specular = 0.5f;
     float shininess = 32.0f;
-    int maxSteps = 256;
-    int samples = 4;
+    int maxSteps = 100;
+    int samples = 1;
 
     void loadFromJson(const json& j);
     json saveToJson() const;

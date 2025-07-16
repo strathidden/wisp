@@ -3,6 +3,8 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <algorithm>
+#include <format>
+#include <array>
 
 UIManager::UIManager(GLFWwindow* window, FractalParams& params)
     : m_fractalParams(params)
@@ -13,13 +15,11 @@ UIManager::UIManager(GLFWwindow* window, FractalParams& params)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     
-    ImGui::StyleColorsDark();
-    auto& style = ImGui::GetStyle();
-    style.WindowRounding = 5.0f;
-    style.FrameRounding = 3.0f;
-    style.GrabRounding = 3.0f;
-    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.18f, 0.95f);
-    style.Colors[ImGuiCol_Header] = ImVec4(0.26f, 0.26f, 0.32f, 1.00f);
+    ImGui::StyleColorsLight();
+    ImVec4* colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4(0.95f, 0.95f, 0.97f, 1.00f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.90f, 0.90f, 0.92f, 1.00f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.85f, 0.85f, 0.87f, 1.00f);
     
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
@@ -76,14 +76,6 @@ void UIManager::drawMainWindow()
                 m_showFileDialog = true;
                 m_isSaving = true;
             }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Exit"))
-            {
-                if (m_fileActionCallback)
-                {
-                    m_fileActionCallback("exit");
-                }
-            }
             ImGui::EndMenu();
         }
 
@@ -139,9 +131,13 @@ void UIManager::drawFileDialog()
         
         if (ImGui::Button("OK", ImVec2(120, 0)))
         {
-            if (m_fileActionCallback)
+            if (m_isSaving)
             {
-                m_fileActionCallback(filename);
+                m_configManager.saveConfig(filename, m_fractalParams);
+            }
+            else
+            {
+                m_configManager.loadConfig(filename, m_fractalParams);
             }
             m_showFileDialog = false;
             ImGui::CloseCurrentPopup();
@@ -162,7 +158,12 @@ void UIManager::drawFileDialog()
         {
             if (ImGui::Selectable(file.c_str()))
             {
-                strncpy(filename, file.c_str(), sizeof(filename));
+                #ifdef _WIN32
+                strncpy_s(filename, sizeof(filename), file.c_str(), _TRUNCATE);
+                #else
+                strncpy(filename, file.c_str(), sizeof(filename) - 1);
+                filename[sizeof(filename) - 1] = '\0';
+                #endif
             }
         }
 
@@ -174,19 +175,24 @@ void UIManager::drawPerformanceWindow(float deltaTime)
 {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(250, 80), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Performance", &m_showPerformance);
+    
+    if (!ImGui::Begin("Performance", &m_showPerformance))
+    {
+        ImGui::End();
+        return;
+    }
 
     ImGui::Text("Frame time: %.3f ms", deltaTime * 1000.0f);
     ImGui::Text("FPS: %.1f", 1.0f / deltaTime);
 
-    static float history[100] = {};
-    static int offset = 0;
-    history[offset] = deltaTime * 1000.0f;
-    offset = (offset + 1) % sizeof(history);
+    static std::array<float, 100> history{};
+    static size_t offset = 0;
     
-    char overlay[32];
-    sprintf(overlay, "%.1f FPS", 1.0f / deltaTime);
-    ImGui::PlotLines("Frame Times", history, sizeof(history), offset, overlay, 0.0f, 50.0f, ImVec2(0, 50));
+    history[offset] = deltaTime * 1000.0f;
+    offset = (offset + 1) % history.size();
+
+    std::string overlay = std::format("{:.1f} FPS", 1.0f / deltaTime);
+    ImGui::PlotLines("Frame Times", history.data(), static_cast<int>(history.size()), static_cast<int>(offset), overlay.c_str(), 0.0f, 50.0f, ImVec2(0, 50));
     
     ImGui::End();
 }

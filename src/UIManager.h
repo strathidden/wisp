@@ -16,12 +16,6 @@ public:
     bool wantCaptureKeyboard() const;
     FractalParams& getFractalParams() { return m_fractalParams; }
 
-    using FileActionCallback = std::function<void(const std::string&)>;
-    void setFileActionCallback(FileActionCallback callback)
-    {
-        m_fileActionCallback = callback;
-    }
-
 private:
     void drawMainWindow();
     void drawFileDialog();
@@ -36,5 +30,4 @@ private:
 
     bool m_showPerformance = true;
     bool m_showPresets = false;
-    FileActionCallback m_fileActionCallback;
 };
