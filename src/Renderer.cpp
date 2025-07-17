@@ -27,7 +27,6 @@ void Renderer::render(const Camera& camera, int width, int height) const
     m_shader.setFloat("u_scale", m_fractalParams.scale);
     m_shader.setVec3("u_offset", m_fractalParams.offset);
     
-    m_shader.setFloat("u_stepSize", m_fractalParams.stepSize);
     m_shader.setFloat("u_minDistance", m_fractalParams.minDistance);
     m_shader.setFloat("u_maxDistance", m_fractalParams.maxDistance);
     m_shader.setVec3("u_color1", m_fractalParams.color1);

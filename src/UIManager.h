@@ -21,6 +21,7 @@ private:
     void drawFileDialog();
     void drawPerformanceWindow(float deltaTime);
     void drawPresetsPanel();
+    void drawColorPicker(const std::string& label, glm::vec3& color);
 
     FractalParams& m_fractalParams;
     ConfigManager m_configManager;
@@ -28,6 +29,8 @@ private:
     bool m_isSaving = false;
     std::string m_currentFile = "config.json";
 
-    bool m_showPerformance = true;
+    bool m_showPerformance = false;
     bool m_showPresets = false;
+    bool m_showColorPicker1 = false;
+    bool m_showColorPicker2 = false;
 };

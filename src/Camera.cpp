@@ -35,7 +35,7 @@ void Camera::processMouseMovement(float xoffset, float yoffset, int button)
 void Camera::processMouseScroll(float yoffset)
 {
     m_distance *= (1.0f - yoffset * m_zoomSpeed);
-    m_distance = std::max(m_distance, m_minDistance);
+    m_distance = std::clamp(m_distance, m_minDistance, m_maxDistance);
     updatePosition();
 }
 
@@ -57,5 +57,7 @@ glm::mat4 Camera::getViewMatrix() const
 glm::mat4 Camera::getProjectionMatrix(float width, float height) const
 {
     float aspect = (height > 0) ? width / height : 1.0f;
-    return glm::perspective(glm::radians(45.0f), aspect, 0.1f, 1000.0f);
+    float near_plane = std::max(0.001f, m_distance * 0.01f);
+    float far_plane = std::max(100.0f, m_distance * 100.0f);
+    return glm::perspective(glm::radians(45.0f), aspect, near_plane, far_plane);
 }

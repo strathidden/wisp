@@ -29,8 +29,9 @@ private:
 
     const float m_panSpeed = 0.01f;
     const float m_rotateSpeed = 0.5f;
-    const float m_zoomSpeed = 0.5f;
+    const float m_zoomSpeed = 0.075f;
     const float m_minDistance = 0.1f;
+    const float m_maxDistance = 3.0f;
     const float m_maxElevation = 89.0f;
     const float m_minElevation = -89.0f;
 };

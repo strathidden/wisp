@@ -13,7 +13,6 @@ struct FractalParams
     float scale = 1.5f;
     glm::vec3 offset = glm::vec3(0.0f);
 
-    float stepSize = 0.01f;
     float minDistance = 0.001f;
     float maxDistance = 100.0f;
     glm::vec3 color1 = glm::vec3(0.2, 0.4f, 0.8f);
@@ -43,7 +42,6 @@ namespace nlohmann {
                 {"bailout", p.bailout},
                 {"scale", p.scale},
                 {"offset", {p.offset.x, p.offset.y, p.offset.z}},
-                {"stepSize", p.stepSize},
                 {"minDistance", p.minDistance},
                 {"maxDistance", p.maxDistance},
                 {"color1", {p.color1.x, p.color1.y, p.color1.z}},
@@ -67,7 +65,6 @@ namespace nlohmann {
             auto offset = j.at("offset").get<std::vector<float>>();
             p.offset = glm::vec3(offset[0], offset[1], offset[2]);
             
-            j.at("stepSize").get_to(p.stepSize);
             j.at("minDistance").get_to(p.minDistance);
             j.at("maxDistance").get_to(p.maxDistance);
             

@@ -17,9 +17,25 @@ UIManager::UIManager(GLFWwindow* window, FractalParams& params)
     
     ImGui::StyleColorsLight();
     ImVec4* colors = ImGui::GetStyle().Colors;
-    colors[ImGuiCol_WindowBg] = ImVec4(0.95f, 0.95f, 0.97f, 1.00f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.90f, 0.90f, 0.92f, 1.00f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.85f, 0.85f, 0.87f, 1.00f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.96f, 0.96f, 0.97f, 1.00f);
+    colors[ImGuiCol_FrameBg] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.90f, 0.92f, 0.95f, 1.00f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.85f, 0.88f, 0.92f, 1.00f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.92f, 0.92f, 0.94f, 1.00f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.88f, 0.88f, 0.90f, 1.00f);
+    colors[ImGuiCol_Header] = ImVec4(0.88f, 0.90f, 0.93f, 1.00f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(0.82f, 0.85f, 0.90f, 1.00f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(0.78f, 0.82f, 0.88f, 1.00f);
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.45f, 0.65f, 0.85f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.35f, 0.55f, 0.80f, 1.00f);
+    
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.FramePadding = ImVec2(8, 4);
+    style.ItemSpacing = ImVec2(8, 6);
+    style.WindowPadding = ImVec2(12, 12);
+    style.IndentSpacing = 16.0f;
+    style.ScrollbarSize = 14.0f;
+    style.GrabMinSize = 12.0f;
     
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
@@ -43,6 +59,21 @@ void UIManager::render(float deltaTime)
     if (m_showFileDialog) drawFileDialog();
     if (m_showPresets) drawPresetsPanel();
 
+    if (m_showColorPicker1)
+    {
+        ImGui::OpenPopup("Color Picker 1");
+        m_showColorPicker1 = false;
+    }
+
+    if (m_showColorPicker2)
+    {
+        ImGui::OpenPopup("Color Picker 2");
+        m_showColorPicker2 = false;
+    }
+
+    drawColorPicker("Color Picker 1", m_fractalParams.color1);
+    drawColorPicker("Color Picker 2", m_fractalParams.color2);
+
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
@@ -59,7 +90,7 @@ bool UIManager::wantCaptureKeyboard() const
 
 void UIManager::drawMainWindow()
 {
-    ImGui::SetNextWindowSize(ImVec2(400, 500), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(420, 550), ImGuiCond_FirstUseEver);
     ImGui::Begin("Fractal Controls", nullptr, ImGuiWindowFlags_MenuBar);
     
     if (ImGui::BeginMenuBar())
@@ -93,17 +124,28 @@ void UIManager::drawMainWindow()
         ImGui::SliderInt("Max Iterations", &m_fractalParams.maxIterations, 1, 500);
         ImGui::SliderFloat("Power", &m_fractalParams.power, 1.0f, 20.0f, "%.1f");
         ImGui::SliderFloat("Bailout", &m_fractalParams.bailout, 0.1f, 10.0f, "%.2f");
-        ImGui::SliderFloat("Scale", &m_fractalParams.scale, 0.1f, 4.0f, "%.2f");
-        ImGui::DragFloat3("Offset", &m_fractalParams.offset[0], 0.01f);
     }
     
     if (ImGui::CollapsingHeader("Rendering Parameters", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::SliderFloat("Step Size", &m_fractalParams.stepSize, 0.001f, 0.1f, "%.4f");
-        ImGui::SliderFloat("Min Distance", &m_fractalParams.minDistance, 0.0001f, 0.01f, "%.4f");
-        ImGui::SliderFloat("Max Distance", &m_fractalParams.maxDistance, 10.0f, 200.0f, "%.1f");
-        ImGui::ColorEdit3("Color 1", &m_fractalParams.color1[0], ImGuiColorEditFlags_Float);
-        ImGui::ColorEdit3("Color 2", &m_fractalParams.color2[0], ImGuiColorEditFlags_Float);
+
+        ImGui::Text("Color 1:");
+        ImGui::SameLine();
+        ImVec4 col1 = ImVec4(m_fractalParams.color1[0], m_fractalParams.color1[1], m_fractalParams.color1[2], 1.0f);
+        if (ImGui::ColorButton("##color1", col1))
+        {
+            m_showColorPicker1 = true;
+        }
+        
+        ImGui::SameLine();
+        ImGui::Text("Color 2:");
+        ImGui::SameLine();
+        ImVec4 col2 = ImVec4(m_fractalParams.color2[0], m_fractalParams.color2[1], m_fractalParams.color2[2], 1.0f);
+        if (ImGui::ColorButton("##color2", col2))
+        {
+            m_showColorPicker2 = true;
+        }
+        
         ImGui::SliderFloat("Ambient", &m_fractalParams.ambient, 0.0f, 1.0f, "%.2f");
         ImGui::SliderFloat("Diffuse", &m_fractalParams.diffuse, 0.0f, 1.0f, "%.2f");
         ImGui::SliderFloat("Specular", &m_fractalParams.specular, 0.0f, 1.0f, "%.2f");
@@ -118,6 +160,24 @@ void UIManager::drawMainWindow()
     }
     
     ImGui::End();
+}
+
+void UIManager::drawColorPicker(const std::string& label, glm::vec3& color)
+{
+    if (ImGui::BeginPopupModal(label.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        float col[3] = {color[0], color[1], color[2]};
+        if (ImGui::ColorPicker3("##picker", col, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_DisplayRGB))
+        {
+            color = {col[0], col[1], col[2]};
+        }
+        
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void UIManager::drawFileDialog()
@@ -174,7 +234,7 @@ void UIManager::drawFileDialog()
 void UIManager::drawPerformanceWindow(float deltaTime)
 {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(250, 80), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(280, 120), ImGuiCond_FirstUseEver);
     
     if (!ImGui::Begin("Performance", &m_showPerformance))
     {
@@ -192,7 +252,7 @@ void UIManager::drawPerformanceWindow(float deltaTime)
     offset = (offset + 1) % history.size();
 
     std::string overlay = std::format("{:.1f} FPS", 1.0f / deltaTime);
-    ImGui::PlotLines("Frame Times", history.data(), static_cast<int>(history.size()), static_cast<int>(offset), overlay.c_str(), 0.0f, 50.0f, ImVec2(0, 50));
+    ImGui::PlotLines("Frame Times", history.data(), static_cast<int>(history.size()), static_cast<int>(offset), overlay.c_str(), 0.0f, 50.0f, ImVec2(0, 40));
     
     ImGui::End();
 }
@@ -202,16 +262,22 @@ void UIManager::drawPresetsPanel()
     ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
     ImGui::Begin("Presets", &m_showPresets);
 
-    if (ImGui::Button("Mandelbulb"))
+    if (ImGui::Button("Mandelbulb", ImVec2(-FLT_MIN, 0)))
     {
         m_fractalParams = FractalParams();
     }
 
-    if (ImGui::Button("High Detail"))
+    if (ImGui::Button("High Detail", ImVec2(-FLT_MIN, 0)))
     {
         m_fractalParams.maxIterations = 200;
-        m_fractalParams.stepSize = 0.005f;
         m_fractalParams.minDistance = 0.0005f;
+        m_fractalParams.samples = 4;
+    }
+    
+    if (ImGui::Button("Colorful", ImVec2(-FLT_MIN, 0)))
+    {
+        m_fractalParams.color1 = {0.8f, 0.2f, 0.1f};
+        m_fractalParams.color2 = {0.1f, 0.4f, 0.9f};
     }
 
     ImGui::End();

@@ -35,6 +35,8 @@ Application::Application()
         exit(EXIT_FAILURE);
     }
 
+    glEnable(GL_DEPTH_TEST);
+
     m_renderer = std::make_unique<Renderer>();
     m_uiManager = std::make_unique<UIManager>(m_window, m_renderer->getFractalParams());
 

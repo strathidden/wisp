@@ -14,7 +14,6 @@ uniform float u_bailout;
 uniform float u_scale;
 uniform vec3 u_offset;
 
-uniform float u_stepSize;
 uniform float u_minDistance;
 uniform float u_maxDistance;
 uniform vec3 u_color1;
@@ -47,27 +46,26 @@ float DE(vec3 pos) {
         z = zr * vec3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
         z += pos * u_scale + u_offset;
         
-        dr = pow(r, u_power - 1.0) * u_power * dr + 1.0;
+        dr = zr / r * u_power * dr + 1.0;
     }
     
-    return 0.5 * log(r) * r / dr;
+    return 0.5 * log(r) * r / dr / u_scale;
 }
 
 vec3 calculateNormal(vec3 pos) {
-    const float eps = 0.001;
-    vec2 e = vec2(eps, 0);
+    float distance = DE(pos);
+    float eps = max(0.001, 0.001 * distance);
+    vec3 e = vec3(eps, 0, 0);
     
-    float d = DE(pos);
     return normalize(vec3(
-        DE(pos + e.xyy) - d,
-        DE(pos + e.yxy) - d,
-        DE(pos + e.yyx) - d
+        DE(pos + e.xyy) - DE(pos - e.xyy),
+        DE(pos + e.yxy) - DE(pos - e.yxy),
+        DE(pos + e.yyx) - DE(pos - e.yyx)
     ));
 }
 
 vec3 shade(vec3 pos, vec3 normal, vec3 lightDir, float ao) {
-    float colorFactor = smoothstep(0.0, 1.0, length(pos) / 5.0);
-    vec3 baseColor = mix(u_color1, u_color2, colorFactor);
+    vec3 baseColor = (normal.y > 0.0) ? u_color1 : u_color2;
     
     vec3 ambient = u_ambient * baseColor * ao;
     
@@ -84,41 +82,36 @@ vec3 shade(vec3 pos, vec3 normal, vec3 lightDir, float ao) {
 
 vec3 getRayDirection(vec2 uv) {
     vec4 rayClip = vec4(uv * 2.0 - 1.0, -1.0, 1.0);
-
     vec4 rayEye = inverse(u_projectionMatrix) * rayClip;
     rayEye = vec4(rayEye.xy, -1.0, 0.0);
-
-    vec3 rayWorld = normalize((inverse(u_viewMatrix) * rayEye).xyz);
-
-    return rayWorld;
+    return normalize((inverse(u_viewMatrix) * rayEye).xyz);
 }
 
 void main() {
     vec3 finalColor = vec3(0.0);
+    vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
     
     for (int s = 0; s < u_samples; s++) {
-        vec2 jitter = vec2(
-            float(s % 2) * 0.5,
-            float(s / 2) * 0.5
-        ) / float(u_samples);
+        //AA with golden ratio sampling
+        float goldenAngle = 2.39996; // radians (≈137.5°)
+        float r = sqrt(float(s) + 0.5) / sqrt(float(u_samples));
+        float theta = float(s) * goldenAngle;
+        vec2 jitter = vec2(r * cos(theta), r * sin(theta)) / u_resolution;
         
         vec2 uv = TexCoords + jitter;
-        
         vec3 rayDir = getRayDirection(uv);
         vec3 rayPos = u_cameraPosition;
         
         float totalDistance = 0.0;
         float dist = 0.0;
         int steps = 0;
-        float aoFactor = 1.0;
+        float ao = 1.0;
     
         for (int i = 0; i < u_maxSteps; i++) {
             dist = DE(rayPos);
             totalDistance += dist;
             rayPos += rayDir * dist;
             steps++;
-            
-            aoFactor -= 1.0 / float(u_maxSteps);
             
             if (dist < u_minDistance || totalDistance > u_maxDistance) {
                 break;
@@ -128,13 +121,13 @@ void main() {
         vec3 color;
         
         if (dist < u_minDistance) {
+            ao = exp(-0.1 * float(steps));
             vec3 normal = calculateNormal(rayPos);
-            vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
-            color = shade(rayPos, normal, lightDir, clamp(aoFactor, 0.1, 1.0));
+            color = shade(rayPos, normal, lightDir, ao);
         } 
         else {
-            float t = 0.5 * (rayDir.y + 1.0);
-            color = mix(vec3(0.3, 0.4, 0.6), vec3(0.7, 0.8, 1.0), t);
+            float t = rayDir.y * 0.5 + 0.5;
+            color = mix(vec3(0.8), vec3(1.0), t);
         }
         
         finalColor += color;
